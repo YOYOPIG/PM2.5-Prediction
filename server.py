@@ -9,7 +9,7 @@ def handler(sock,addr):
         data=sock.recv(1024)
         if not data:
             break;
-        sock.send('hello %s' % data)
+        sock.send('Echo : %s' % data)
     sock.close()
 
 # Testing only, don't use this zzzzzzzzz
@@ -27,8 +27,8 @@ def mainfunc():
     # Open mongodb
     url = "mongodb://USERNAME:password@host?authSource=source" 
     client = MongoClient(url)
-    db = client.<database_name>
-    collection = db.<collection_name>
+    db = client.<database_name> # change db name here !!!!!!!!!!
+    collection = db.<collection_name> # change collection name here !!!!!!!!!!
     
     # Turn on server
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
