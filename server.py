@@ -3,24 +3,19 @@ import threading
 from pymongo import MongoClient
 
 # Request handler
-def handler(sock,addr):
+def handler(sock,addr, collection):
     sock.send('YEE from server. YEEEEEEEEEE')
-    while True:
-        data=sock.recv(1024)
-        if not data:
-            break;
-        sock.send('Echo : %s' % data)
-    sock.close()
-
-# Testing only, don't use this zzzzzzzzz
-def add_to_db():
-    # Create new post
-    #for testing
-    new_dict = {"name": "John",
-             "id": "100",
-             "work": ["mongodb", "python"]}
-    # insert into collection
+    #while True: to loop
+    data=sock.recv(1024)
+    if not data:
+        print("ERROR : No data")
+    #create new dict to insert
+    key_list = ["id", "time", "pm1.0", "pm2.5", "pm10", "temp", "humid"]
+    value_list = data.split()
+    new_dict = dict(zip(key_list, value_list))
     collection.insert_one(new_dict)
+    sock.send('Data received. Closing connection...')
+    sock.close()
 
 # Main function
 def mainfunc():
@@ -38,7 +33,7 @@ def mainfunc():
     while True:
         socket,addr = sock.accept()
         # Create a new thread to handle requests
-        thread = threading.Thread(target=handler,args=(socket,addr))
+        thread = threading.Thread(target=handler,args=(socket,addr, collection))
         thread.start()
 
 if __name__ == '__main__':
