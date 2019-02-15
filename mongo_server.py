@@ -3,7 +3,7 @@ import threading
 from pymongo import MongoClient
 
 # Request handler
-def handler(sock,addr, collection):
+def handler(sock, addr, collection):
     msg = 'YEE from server. YEEEEEEEEEE'
     sock.send(msg.encode('utf-8'))
     #while True: to loop
@@ -15,6 +15,7 @@ def handler(sock,addr, collection):
     value_list = data.split()
     new_dict = dict(zip(key_list, value_list))
     collection.insert_one(new_dict)
+    
     msg = 'Data received. Closing connection...'
     sock.send(msg.encode('utf-8'))
     sock.close()
@@ -37,5 +38,5 @@ if __name__ == '__main__':
     while True:
         socket,addr = sock.accept()
         # Create a new thread to handle requests
-        thread = threading.Thread(target=handler,args=(socket,addr, collection))
+        thread = threading.Thread(target=handler,args=(socket, addr, collection))
         thread.start()
