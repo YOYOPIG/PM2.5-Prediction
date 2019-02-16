@@ -1,0 +1,15 @@
+version: '3'
+services:
+  server:
+    container_name: pm2.5_server
+    restart: always
+    build: .
+    ports:
+      - '82:8080'
+    links:
+      - mongo
+  mongo:
+    container_name: mongo
+    image: mongo
+    ports: 
+      - '27017:27017'
