@@ -3,6 +3,14 @@ import threading
 import os
 from pymongo import MongoClient
 
+# Open mongodb
+client = MongoClient(os.environ['DB_PORT_27017_TCP_ADDR'], 27017)
+#url = "mongodb://USERNAME:password@host?authSource=source" 
+#client = MongoClient(url)
+print("open db")
+db = client.testdb # <database_name>
+collection = db.testcol # <collection_name>
+
 # Request handler
 def handler(sock, addr, collection):
     msg = 'YEE from server. YEEEEEEEEEE'
@@ -23,12 +31,6 @@ def handler(sock, addr, collection):
 
 # Main function
 if __name__ == '__main__':
-    # Open mongodb
-    #url = "mongodb://USERNAME:password@host?authSource=source" 
-    #client = MongoClient(url)
-    client = MongoClient(os.environ['DB_PORT_27017_TCP_ADDR'], 27017)
-    db = client.<database_name> # change db name here !!!!!!!!!!
-    collection = db.<collection_name> # change collection name here !!!!!!!!!!
     
     # Turn on server
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
