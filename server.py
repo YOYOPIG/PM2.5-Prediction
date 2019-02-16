@@ -25,10 +25,10 @@ def handler(sock,addr):
 if __name__ == '__main__':
     # Turn on server
     sock = socket.socket()
-    sock.bind(('0.0.0.0', 80))# port
+    sock.bind(('0.0.0.0', 8080))# port
     sock.listen(5)
     # Connect to mongodb
-    connect("mongodb://0.0.0.0:32771/test")
+    connect("mongodb://mongo:27017/test")
     print('Waiting for connection...')
     while True:
         (socket,addr) = sock.accept()

@@ -2,19 +2,19 @@
 FROM python:3.5
 
 # Set the working directory to /app
-WORKDIR /
+WORKDIR /app
 
 # Copy the current directory contents into the container at /app
-COPY . /
+COPY . .
 
 # Install any needed packages specified in requirements.txt
 RUN pip install --trusted-host pypi.python.org -r requirements.txt
 
-# Make port 80 available to the world outside this container
-EXPOSE 80
+# Make port 8080 available to the world outside this container
+EXPOSE 8080
 
 # Define environment variable
-ENV NAME World
+# ENV NAME World
 
 # Run app when the container launches
 CMD ["python3", "server.py"]
