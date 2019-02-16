@@ -1,5 +1,6 @@
 import socket
 import threading
+import os
 from pymongo import MongoClient
 
 # Request handler
@@ -23,8 +24,9 @@ def handler(sock, addr, collection):
 # Main function
 if __name__ == '__main__':
     # Open mongodb
-    url = "mongodb://USERNAME:password@host?authSource=source" 
-    client = MongoClient(url)
+    #url = "mongodb://USERNAME:password@host?authSource=source" 
+    #client = MongoClient(url)
+    client = MongoClient(os.environ['DB_PORT_27017_TCP_ADDR'], 27017)
     db = client.<database_name> # change db name here !!!!!!!!!!
     collection = db.<collection_name> # change collection name here !!!!!!!!!!
     
