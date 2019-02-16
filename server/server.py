@@ -1,5 +1,6 @@
 import socket
 import threading
+from pymodm.connection import connect
 
 # Request handler
 def handler(sock,addr):
@@ -26,6 +27,8 @@ if __name__ == '__main__':
     sock = socket.socket()
     sock.bind(('0.0.0.0', 80))# port
     sock.listen(5)
+    # Connect to mongodb
+    connect("mongodb://0.0.0.0:32771/test")
     print('Waiting for connection...')
     while True:
         (socket,addr) = sock.accept()
