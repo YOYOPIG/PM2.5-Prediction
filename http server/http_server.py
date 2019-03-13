@@ -1,4 +1,5 @@
 from http.server import HTTPServer, BaseHTTPRequestHandler
+import pymongo
 import json
 
 data = {'Test': 'this is a testing message, YEE'}
@@ -19,6 +20,14 @@ class RequestHandler(BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     try:
+        # Open mongo db
+        client = pymongo.MongoClient("mongodb://mongo:27017/")
+        db = client["pmBase"]
+        col = db["pm_data"]
+        x = col.find_one()
+        print(x)
+
+        # Start the server
         server = HTTPServer(host, RequestHandler)
         print("Starting http server listening at: %s:%s" % host)
         server.serve_forever()

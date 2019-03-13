@@ -1,0 +1,15 @@
+version: '1'
+services:
+  http_server:
+    container_name: http_server
+    restart: always
+    build: .
+    ports:
+      - '800:8000'
+    links:
+      - mongo
+  mongo:
+    container_name: mongo
+    image: mongo
+    ports: 
+      - '27017:27017'
