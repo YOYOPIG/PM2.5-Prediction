@@ -1,2 +1,4 @@
-# PM2.5 Prediction Server
-This is a program that receives data sent by the sensors and saves into the database (mongoDB).
+# PM2.5 Prediction
+This is the main project repository. The following folders contain:
+* **http server** - The server for the phone app
+* **server** - The server for sensors to connect
