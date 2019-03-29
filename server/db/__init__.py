@@ -1,5 +1,5 @@
 from pymodm.connection import connect
-from .baseDB import BaseDB
+from .base_db import BaseDB
 
-def connectToDB():
+def connect_to_db():
     connect(BaseDB.base_url, BaseDB.connectionAlias)

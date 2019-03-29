@@ -1,0 +1,52 @@
+version: '3'
+services:
+  server:
+    container_name: pm2.5_server
+    restart: always
+    build: server
+    ports:
+      - '82:8080'
+    links:
+      - mongo
+    logging:
+      driver: json-file
+      options:
+        max-size: '2000k'
+        max-file: '3'
+  http_server:
+    container_name: http_server
+    restart: always
+    build: http_server
+    ports:
+      - '6800:5000'
+    links:
+      - mongo
+    logging:
+      driver: json-file
+      options:
+        max-size: '2000k'
+        max-file: '3'
+  mongo:
+    container_name: mongo
+    image: mongo
+    volumes:
+      # mapped a named volume inside host filesystem to the /data/db, where the mongodb put data
+      - 'my-db:/data/db'
+    ports: 
+      - '27017:27017'
+  mongo-backup:
+    image: 'istepanov/mongodump:3.4'
+    volumes:
+      - 'mongo-backup:/backup'
+    environment:
+      CRON_SCHEDULE: '0 1 * * *'
+    depends_on:
+      - mongo
+      
+volumes:
+  my-db:
+    external:
+      name: my-db
+  mongo-backup:
+    external:
+      name: mongo-backup
