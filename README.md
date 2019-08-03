@@ -4,4 +4,5 @@ This is the main project repository. The following folders contain:
 * **server** - The server for sensors to connect
 * **ML_Model** - The machine learning tensorflow model to predict future air qualities.
 
+Now working : visualization
 Working directory changed!
