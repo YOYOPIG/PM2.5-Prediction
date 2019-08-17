@@ -47,7 +47,14 @@ def get_pos_data(pos):
         return data
 
 def get_feat_hour_avg(pos, ft):
+    # in_time = get_input_time()
     data = get_pos_data(pos)
+    # df = pd.DataFrame(data)
+    # # Select the duration
+    # df = df.loc[ df['date'] > in_time[0] ]
+    # df = df.loc[ df['date'] < in_time[1] ]
+    # data = df.to_dict().values()
+    # print(data)
     total_pm25_list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]# size 24 for each hr(0~23)
     data_num_list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
     avg_pm25_list = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]
@@ -105,6 +112,25 @@ def get_focus_positions():
         pos.append(7)
     return pos
 
+def get_input_time():
+    global entry_start
+    global entry_end
+    taipei_tz = pytz.timezone('Asia/Taipei')
+    time = []
+    t1 = entry_start.get()
+    t2 = entry_end.get()
+    start_time = dt.datetime.strptime(t1, '%Y %m %d').replace(tzinfo=taipei_tz)
+    end_time = dt.datetime.strptime(t2, '%Y %m %d').replace(tzinfo=taipei_tz)
+    time.append(start_time)
+    time.append(end_time)
+    return time
+
+def clear_plot():
+    global graph_frame
+    for widget in graph_frame.winfo_children():
+        widget.destroy()
+
+# no pos, ft one, time off
 def animation_on_map():
     tar_feature =  get_focus_features()
     img = plt.imread("ncku.jpg") # background img
@@ -154,6 +180,7 @@ def animation_on_map():
     plt.imshow(img, extent=[0, 400, 0, 300])
     ax.contourf(ans[0], alpha=.6)
     ax.set_title('Avg. ' + tar_feature[0] + ' at time 0')
+    clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
     def update_fig(t):
@@ -162,20 +189,22 @@ def animation_on_map():
         ax.contourf(ans[int(t)], alpha=.6)
         ax.set_title('Avg. ' + tar_feature[0] + ' at time ' + t)
         canvas.draw()# = FigureCanvasTkAgg(fig, graph_frame)
-    s = tk.Scale(graph_frame, label='try me', from_=0, to=23, orient=tk.HORIZONTAL,
+    s = tk.Scale(graph_frame, label='Select time', from_=0, to=23, orient=tk.HORIZONTAL,
              length=600, showvalue=0, tickinterval=1, resolution=1, command=update_fig)
     s.pack()
 
+# pos on, ft off, Time on (need clear data?)
 def plot_line_chart():
     tar_feature =  get_focus_features()
     tar_positions = get_focus_positions()
     data = get_pos_data(tar_positions[0])
+    in_time = get_input_time()
     # Add explicitly converter
     pd.plotting.register_matplotlib_converters()
     df = pd.DataFrame(data)
     # Select the duration
-    # df = df.loc[ df['date'] > self.start_time ]
-    # df = df.loc[ df['date'] < self.end_time ]
+    df = df.loc[ df['date'] > in_time[0] ]
+    df = df.loc[ df['date'] < in_time[1] ]
     # Plot y versus x(time)
     colors = ['navy', 'turquoise', 'darkorange', 'olive', 'lightgray', 'pink', 'lightgreen']
     label = ['pm10', 'pm25', 'pm100', 'temp', 'humidity']
@@ -186,15 +215,18 @@ def plot_line_chart():
     ax.plot(df['date'], df[label[2]], c=colors[2], label=label_display[2], lw=1, ls='-')
     ax.plot(df['date'], df[label[3]], c=colors[3], label=label_display[3], lw=1, ls='-')
     ax.plot(df['date'], df[label[4]], c=colors[4], label=label_display[4], lw=1, ls='-')
+    clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
     # Uncomment this if u need to show figure in a separate window
     # plt.show()
 
+# time on, pos on, ft on
 def plot_scatter_time():
     tar_feature =  get_focus_features()
     tar_positions = get_focus_positions()
     data = get_pos_data(tar_positions[0])
+    in_time = get_input_time()
     pd.plotting.register_matplotlib_converters()
     df = pd.DataFrame(data)
     color_arr = []
@@ -210,16 +242,18 @@ def plot_scatter_time():
     # Set color_arr to the third column of df for colouring
     df['color'] = color_arr
     # Select the duration
-    # df = df.loc[ df['date'] > self.start_time ]
-    # df = df.loc[ df['date'] < self.end_time ]
+    df = df.loc[ df['date'] > in_time[0] ]
+    df = df.loc[ df['date'] < in_time[1] ]
     fig,ax = plt.subplots()
     labels = ['0~6', '6~12', '12~18', '18~24']
     colors = ['navy', 'turquoise', 'darkorange', 'y']
     for i, dff in df.groupby('color'):
       ax.scatter(dff['date'], dff[tar_feature[0]], c=colors[i], label=labels[i])
+    clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
+# time off, pos on, ft on
 def plot_corr():
     tar_feature =  get_focus_features()
     tar_positions = get_focus_positions()
@@ -254,9 +288,11 @@ def plot_corr():
                 ax=ax,
                 cmap='YlGnBu',
                 linewidths=0.5)
+    clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
+# time on, pos on, ft off
 def plt_scatter():
     tar_feature =  get_focus_features()
     tar_positions = get_focus_positions()
@@ -303,9 +339,11 @@ def plt_scatter():
     plt.xlabel('hour (hr.)')
     plt.ylabel('pm2.5 (μg/m^3)')
     #plt.show()
+    clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
+# # time on, pos on, ft off
 def plot_boxplot():
     tar_feature =  get_focus_features()
     tar_positions = get_focus_positions()
@@ -336,6 +374,7 @@ def plot_boxplot():
     ax = sns.boxplot(x='position', y='humidity', data=df, color='cyan', ax=axes[2])
     ax.axis(ymin=15, ymax=100)
     ax.set_ylabel('humidity(%)')
+    clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
@@ -347,6 +386,7 @@ def yee():
 window = tk.Tk()
 window.title('Air Quality Visualizer')
 window.geometry('500x300') # Set window size(L*W)
+window.configure(background='#42444d')
 graph_frame = tk.Frame(window)
 
 # Variable declarations for ui
@@ -377,20 +417,15 @@ def hit_me():
     else:
         on_hit = False
         var.set('')
-# 第5步，在視窗介面設定放置Button按鍵
-button_dl_data = tk.Button(window, text='Download', font=('Arial', 12), width=10, height=1, command=download_data)
+
+# Declare widgets
+button_dl_data = tk.Button(window, text='Download / Update data', font=('Arial', 12), width=30, height=1, command=download_data)
 button_scatter = tk.Button(window, text='Scatter', font=('Arial', 12), width=10, height=1, command=plt_scatter)
 button_line = tk.Button(window, text='Line', font=('Arial', 12), width=10, height=1, command=plot_line_chart)
 button_detail = tk.Button(window, text='Details', font=('Arial', 12), width=10, height=1, command=plot_scatter_time)
 button_corr = tk.Button(window, text='Correlation', font=('Arial', 12), width=10, height=1, command=plot_corr)
 button_box = tk.Button(window, text='Box plot', font=('Arial', 12), width=10, height=1, command=plot_boxplot)
-
-button_dl_data.grid(row=0, column=0, padx=2, pady=2)
-button_scatter.grid(row=0, column=1, padx=2, pady=2)
-button_line.grid(row=0, column=2, padx=2, pady=2)
-button_detail.grid(row=1, column=0, padx=2, pady=2)
-button_corr.grid(row=1, column=1, padx=2, pady=2)
-button_box.grid(row=1, column=2, padx=2, pady=2)
+button_map = tk.Button(window, text='Map', font=('Arial', 12), width=10, height=1, command=animation_on_map)
 
 check_p0 = tk.Checkbutton(window, text='Pos0',variable=pos0_on, onvalue=1, offvalue=0, command=hit_me)
 check_p1 = tk.Checkbutton(window, text='Pos1',variable=pos1_on, onvalue=1, offvalue=0, command=hit_me)
@@ -401,30 +436,54 @@ check_p5 = tk.Checkbutton(window, text='Pos5',variable=pos5_on, onvalue=1, offva
 check_p6 = tk.Checkbutton(window, text='Pos6',variable=pos6_on, onvalue=1, offvalue=0, command=hit_me)
 check_p7 = tk.Checkbutton(window, text='Pos7',variable=pos7_on, onvalue=1, offvalue=0, command=hit_me)
 
-label = tk.Label(window, text='Features',font=('Arial', 8), width=10, height=2)
+lbl_feature = tk.Label(window, text='Features',font=('Arial', 8), width=10, height=2)
+lbl_pos = tk.Label(window, text='Positions',font=('Arial', 8), width=10, height=2)
+lbl_t = tk.Label(window, text='Time interval',font=('Arial', 8), width=15, height=2)
+lbl_start = tk.Label(window, text='Start time',font=('Arial', 8), width=10, height=2)
+lbl_end = tk.Label(window, text='End time',font=('Arial', 8), width=10, height=2)
+
 check_pm10 = tk.Checkbutton(window, text='Pm1.0',variable=pm10_on, onvalue=1, offvalue=0, command=hit_me)
 check_pm25 = tk.Checkbutton(window, text='Pm2.5',variable=pm25_on, onvalue=1, offvalue=0, command=hit_me)
 check_pm100 = tk.Checkbutton(window, text='Pm10.0',variable=pm100_on, onvalue=1, offvalue=0, command=hit_me)
 check_temp = tk.Checkbutton(window, text='Temp',variable=temp_on, onvalue=1, offvalue=0, command=hit_me)
 check_humid = tk.Checkbutton(window, text='Humid',variable=humid_on, onvalue=1, offvalue=0, command=hit_me)
 
-check_p0.grid(row=2, column=0, padx=2, pady=2)
-check_p1.grid(row=2, column=1, padx=2, pady=2)
-check_p2.grid(row=2, column=2, padx=2, pady=2)
-check_p3.grid(row=3, column=0, padx=2, pady=2)
-check_p4.grid(row=3, column=1, padx=2, pady=2)
-check_p5.grid(row=3, column=2, padx=2, pady=2)
-check_p6.grid(row=4, column=0, padx=2, pady=2)
-check_p7.grid(row=4, column=1, padx=2, pady=2)
+entry_start = tk.Entry(window, show = None)
+entry_end = tk.Entry(window, show = None)
 
-label.grid(row=5, column=0, padx=2, pady=2)
-check_pm10.grid(row=6, column=0, padx=2, pady=2)
-check_pm25.grid(row=6, column=1, padx=2, pady=2)
-check_pm100.grid(row=6, column=2, padx=2, pady=2)
-check_temp.grid(row=7, column=0, padx=2, pady=2)
-check_humid.grid(row=7, column=1, padx=2, pady=2)
+# Place widgets on the window
+button_dl_data.grid(row=0, column=0, columnspan=3, padx=2, pady=2)
+button_scatter.grid(row=1, column=0, padx=2, pady=2)
+button_line.grid(row=1, column=1, padx=2, pady=2)
+button_map.grid(row=1, column=2, padx=2, pady=2)
+button_detail.grid(row=2, column=0, padx=2, pady=2)
+button_corr.grid(row=2, column=1, padx=2, pady=2)
+button_box.grid(row=2, column=2, padx=2, pady=2)
 
-graph_frame.grid(row=0, column=3, rowspan=8, padx=5, pady=5)
+lbl_pos.grid(row=3, column=0, padx=2, pady=2)
+check_p0.grid(row=4, column=0, padx=2, pady=2)
+check_p1.grid(row=4, column=1, padx=2, pady=2)
+check_p2.grid(row=4, column=2, padx=2, pady=2)
+check_p3.grid(row=5, column=0, padx=2, pady=2)
+check_p4.grid(row=5, column=1, padx=2, pady=2)
+check_p5.grid(row=5, column=2, padx=2, pady=2)
+check_p6.grid(row=6, column=0, padx=2, pady=2)
+check_p7.grid(row=6, column=1, padx=2, pady=2)
+
+lbl_feature.grid(row=7, column=0, padx=2, pady=2)
+check_pm10.grid(row=8, column=0, padx=2, pady=2)
+check_pm25.grid(row=8, column=1, padx=2, pady=2)
+check_pm100.grid(row=8, column=2, padx=2, pady=2)
+check_temp.grid(row=9, column=0, padx=2, pady=2)
+check_humid.grid(row=9, column=1, padx=2, pady=2)
+
+lbl_t.grid(row=10, column=0, padx=2, pady=2)
+lbl_start.grid(row=11, column=0, padx=2, pady=2)
+entry_start.grid(row=11, column=1, padx=2, pady=2)
+lbl_end.grid(row=12, column=0, padx=2, pady=2)
+entry_end.grid(row=12, column=1, padx=2, pady=2)
+
+graph_frame.grid(row=0, column=3, rowspan=13, padx=5, pady=5)
 
 
 # At the end, start the window loop
