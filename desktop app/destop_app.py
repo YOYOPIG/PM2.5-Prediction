@@ -212,6 +212,7 @@ def plot_line_chart():
     fig,ax = plt.subplots()
     for i in range(len(label)):
         ax.plot(df['date'], df[label[i]], c=colors[i], label=label_display[i], lw=1, ls='-')
+        plt.xticks(rotation=90)
     # ax.plot(df['date'], df[label[0]], c=colors[0], label=label_display[0], lw=1, ls='-')
     # ax.plot(df['date'], df[label[1]], c=colors[1], label=label_display[1], lw=1, ls='-')
     # ax.plot(df['date'], df[label[2]], c=colors[2], label=label_display[2], lw=1, ls='-')
@@ -260,6 +261,7 @@ def plot_scatter_time():
 def plot_corr():
     tar_feature =  get_focus_features()
     tar_positions = get_focus_positions()
+    in_time = get_input_time()
     data = []
     for i in tar_positions:
         data = data + get_pos_data(i)
@@ -284,7 +286,7 @@ def plot_corr():
     # compute the correlation
     corr = df.corr()
     # plot correlation matrix
-    fig, ax = plt.subplots(figsize=(7, 7))
+    fig, ax = plt.subplots(figsize=(10, 9))
     sns.heatmap(corr, 
                 xticklabels=corr.columns.values,
                 yticklabels=corr.columns.values,
@@ -321,27 +323,27 @@ def plt_scatter():
     df = df[(np.abs(stats.zscore(df)) < 3).all(axis=1)]
     # plot scatter plot
     # subplot 1
-    fig = plt.figure()
+    fig = plt.figure(figsize=(10,5))
     ax = plt.subplot(221)
     x = np.array(df['temp'])
     y = np.array(df['pm2.5'])
     colors = np.array(df['position'])
     scatter = ax.scatter(x, y, c=colors, cmap='Spectral')
-    ax.legend(*scatter.legend_elements(num=8), loc='upper right', title='position')
+    #ax.legend(*scatter.legend_elements(num=8), loc='upper right', title='position')
     plt.xlabel('temp (°C)')
     plt.ylabel('pm2.5 (μg/m^3)')
     # subplot 2
     ax = plt.subplot(222)
     x = np.array(df['humidity'])
     scatter = ax.scatter(x, y, c=colors, cmap='Spectral')
-    ax.legend(*scatter.legend_elements(num=8), loc='upper left', title='position')
+    #ax.legend(*scatter.legend_elements(num=8), loc='upper left', title='position')
     plt.xlabel('humidity (%)')
     plt.ylabel('pm2.5 (μg/m^3)')
     # sunplot 3
     ax = plt.subplot(223)
     x = np.array(df['hour_minute'])
     scatter = ax.scatter(x, y, c=colors, cmap='Spectral')
-    ax.legend(*scatter.legend_elements(num=8), loc='upper left', title='position')
+    #ax.legend(*scatter.legend_elements(num=8), loc='upper left', title='position')
     plt.xlabel('hour (hr.)')
     plt.ylabel('pm2.5 (μg/m^3)')
     #plt.show()
@@ -395,6 +397,10 @@ window.geometry('500x300') # Set window size(L*W)
 #window.configure(background='#42444d')
 graph_frame = tk.Frame(window)
 
+# Set fonts
+bold_font = 'Open sans bold'
+norm_font = 'Open sans'
+
 # Variable declarations for ui
 pos0_on = tk.BooleanVar()
 pos1_on = tk.BooleanVar()
@@ -425,13 +431,13 @@ def hit_me():
         var.set('')
 
 # Declare widgets
-button_dl_data = tk.Button(window, text='Download / Update data', font=('Open sans', 12), width=30, height=1, command=download_data)
-button_scatter = tk.Button(window, text='Scatter', font=('Open sans', 12), width=10, height=1, command=plt_scatter)
-button_line = tk.Button(window, text='Line', font=('Open sans', 12), width=10, height=1, command=plot_line_chart)
-button_detail = tk.Button(window, text='Details', font=('Open sans', 12), width=10, height=1, command=plot_scatter_time)
-button_corr = tk.Button(window, text='Correlation', font=('Open sans', 12), width=10, height=1, command=plot_corr)
-button_box = tk.Button(window, text='Box plot', font=('Open sans', 12), width=10, height=1, command=plot_boxplot)
-button_map = tk.Button(window, text='Map', font=('Open sans', 12), width=10, height=1, command=animation_on_map)
+button_dl_data = tk.Button(window, text='Download / Update data', font=(norm_font, 12), width=30, height=1, command=download_data)
+button_scatter = tk.Button(window, text='Scatter', font=(norm_font, 12), width=10, height=1, command=plt_scatter)
+button_line = tk.Button(window, text='Line', font=(norm_font, 12), width=10, height=1, command=plot_line_chart)
+button_detail = tk.Button(window, text='Details', font=(norm_font, 12), width=10, height=1, command=plot_scatter_time)
+button_corr = tk.Button(window, text='Correlation', font=(norm_font, 12), width=10, height=1, command=plot_corr)
+button_box = tk.Button(window, text='Box plot', font=(norm_font, 12), width=10, height=1, command=plot_boxplot)
+button_map = tk.Button(window, text='Map', font=(norm_font, 12), width=10, height=1, command=animation_on_map)
 
 check_p0 = tk.Checkbutton(window, text='Pos0',variable=pos0_on, onvalue=1, offvalue=0, command=hit_me)
 check_p1 = tk.Checkbutton(window, text='Pos1',variable=pos1_on, onvalue=1, offvalue=0, command=hit_me)
@@ -442,12 +448,12 @@ check_p5 = tk.Checkbutton(window, text='Pos5',variable=pos5_on, onvalue=1, offva
 check_p6 = tk.Checkbutton(window, text='Pos6',variable=pos6_on, onvalue=1, offvalue=0, command=hit_me)
 check_p7 = tk.Checkbutton(window, text='Pos7',variable=pos7_on, onvalue=1, offvalue=0, command=hit_me)
 
-lbl_feature = tk.Label(window, text='Features',font=('Open sans bold', 10), width=10, height=2)
-lbl_pos = tk.Label(window, text='Positions',font=('Open sans bold', 10), width=10, height=2)
-lbl_t = tk.Label(window, text='Time interval', font=('Open sans bold', 10), width=12, height=2)
-lbl_tf = tk.Label(window, text='(YYYY MM DD)', font=('Open sans', 10), width=12, height=2)
-lbl_start = tk.Label(window, text='Start time',font=('Open sans', 10), width=10, height=2)
-lbl_end = tk.Label(window, text='End time',font=('Open sans', 10), width=10, height=2)
+lbl_feature = tk.Label(window, text='Features',font=(bold_font, 10), width=10, height=2)
+lbl_pos = tk.Label(window, text='Positions',font=(bold_font, 10), width=10, height=2)
+lbl_t = tk.Label(window, text='Time interval', font=(bold_font, 10), width=12, height=2)
+lbl_tf = tk.Label(window, text='(YYYY MM DD)', font=(norm_font, 10), width=12, height=2)
+lbl_start = tk.Label(window, text='Start time',font=(norm_font, 10), width=10, height=2)
+lbl_end = tk.Label(window, text='End time',font=(norm_font, 10), width=10, height=2)
 
 check_pm10 = tk.Checkbutton(window, text='Pm1.0',variable=pm10_on, onvalue=1, offvalue=0, command=hit_me)
 check_pm25 = tk.Checkbutton(window, text='Pm2.5',variable=pm25_on, onvalue=1, offvalue=0, command=hit_me)
@@ -491,7 +497,7 @@ entry_start.grid(row=11, column=1, padx=2, pady=2)
 lbl_end.grid(row=12, column=0, padx=2, pady=2)
 entry_end.grid(row=12, column=1, padx=2, pady=2)
 
-graph_frame.grid(row=0, column=3, rowspan=13, padx=5, pady=5)
+graph_frame.grid(row=0, column=3, rowspan=15, padx=5, pady=5)
 
 
 # At the end, start the window loop
