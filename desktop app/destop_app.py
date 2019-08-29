@@ -351,7 +351,7 @@ def plt_scatter():
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
-# # time on, pos on, no ft
+# # time off, pos on, no ft
 def plot_boxplot():
     tar_feature =  get_focus_features()
     tar_positions = get_focus_positions()
@@ -367,7 +367,7 @@ def plot_boxplot():
     # construct a new dataframe used to plot boxplot 1
     df_melt = pd.melt(df, id_vars=['position'], value_vars=['pm1.0', 'pm2.5', 'pm10.0'], var_name='Particulate Matter (PM)')
     # plot three boxplots
-    fig, axes = plt.subplots(3, 1, sharex=True, figsize=(20, 8))
+    fig, axes = plt.subplots(3, 1, sharex=True, figsize=(12, 8))
     # subplot 1
     ax = sns.boxplot(x='position', y='value', data=df_melt, hue='Particulate Matter (PM)', palette='Set3', ax=axes[0])
     ax.axis(ymin=0, ymax=100)
@@ -386,14 +386,13 @@ def plot_boxplot():
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
-def yee():
-    return 1
+
 
 # Main program starts here
 # Create window
 window = tk.Tk()
 window.title('Air Quality Visualizer')
-window.geometry('500x300') # Set window size(L*W)
+window.geometry('1000x600') # Set window size(L*W)
 #window.configure(background='#42444d')
 graph_frame = tk.Frame(window)
 
@@ -419,17 +418,6 @@ humid_on = tk.BooleanVar()
 var = tk.StringVar()
 plot_time = tk.IntVar()
 
-# 定義一個函式功能（內容自己自由編寫），供點選Button按鍵時呼叫，呼叫命令引數command=函式名
-on_hit = False
-def hit_me():
-    global on_hit
-    if on_hit == False:
-        on_hit = True
-        var.set('you hit me')
-    else:
-        on_hit = False
-        var.set('')
-
 # Declare widgets
 button_dl_data = tk.Button(window, text='Download / Update data', font=(norm_font, 12), width=30, height=1, command=download_data)
 button_scatter = tk.Button(window, text='Scatter', font=(norm_font, 12), width=10, height=1, command=plt_scatter)
@@ -439,14 +427,14 @@ button_corr = tk.Button(window, text='Correlation', font=(norm_font, 12), width=
 button_box = tk.Button(window, text='Box plot', font=(norm_font, 12), width=10, height=1, command=plot_boxplot)
 button_map = tk.Button(window, text='Map', font=(norm_font, 12), width=10, height=1, command=animation_on_map)
 
-check_p0 = tk.Checkbutton(window, text='Pos0',variable=pos0_on, onvalue=1, offvalue=0, command=hit_me)
-check_p1 = tk.Checkbutton(window, text='Pos1',variable=pos1_on, onvalue=1, offvalue=0, command=hit_me)
-check_p2 = tk.Checkbutton(window, text='Pos2',variable=pos2_on, onvalue=1, offvalue=0, command=hit_me)
-check_p3 = tk.Checkbutton(window, text='Pos3',variable=pos3_on, onvalue=1, offvalue=0, command=hit_me)
-check_p4 = tk.Checkbutton(window, text='Pos4',variable=pos4_on, onvalue=1, offvalue=0, command=hit_me)
-check_p5 = tk.Checkbutton(window, text='Pos5',variable=pos5_on, onvalue=1, offvalue=0, command=hit_me)
-check_p6 = tk.Checkbutton(window, text='Pos6',variable=pos6_on, onvalue=1, offvalue=0, command=hit_me)
-check_p7 = tk.Checkbutton(window, text='Pos7',variable=pos7_on, onvalue=1, offvalue=0, command=hit_me)
+check_p0 = tk.Checkbutton(window, text='Pos0',variable=pos0_on, onvalue=1, offvalue=0)
+check_p1 = tk.Checkbutton(window, text='Pos1',variable=pos1_on, onvalue=1, offvalue=0)
+check_p2 = tk.Checkbutton(window, text='Pos2',variable=pos2_on, onvalue=1, offvalue=0)
+check_p3 = tk.Checkbutton(window, text='Pos3',variable=pos3_on, onvalue=1, offvalue=0)
+check_p4 = tk.Checkbutton(window, text='Pos4',variable=pos4_on, onvalue=1, offvalue=0)
+check_p5 = tk.Checkbutton(window, text='Pos5',variable=pos5_on, onvalue=1, offvalue=0)
+check_p6 = tk.Checkbutton(window, text='Pos6',variable=pos6_on, onvalue=1, offvalue=0)
+check_p7 = tk.Checkbutton(window, text='Pos7',variable=pos7_on, onvalue=1, offvalue=0)
 
 lbl_feature = tk.Label(window, text='Features',font=(bold_font, 10), width=10, height=2)
 lbl_pos = tk.Label(window, text='Positions',font=(bold_font, 10), width=10, height=2)
@@ -455,11 +443,11 @@ lbl_tf = tk.Label(window, text='(YYYY MM DD)', font=(norm_font, 10), width=12, h
 lbl_start = tk.Label(window, text='Start time',font=(norm_font, 10), width=10, height=2)
 lbl_end = tk.Label(window, text='End time',font=(norm_font, 10), width=10, height=2)
 
-check_pm10 = tk.Checkbutton(window, text='Pm1.0',variable=pm10_on, onvalue=1, offvalue=0, command=hit_me)
-check_pm25 = tk.Checkbutton(window, text='Pm2.5',variable=pm25_on, onvalue=1, offvalue=0, command=hit_me)
-check_pm100 = tk.Checkbutton(window, text='Pm10.0',variable=pm100_on, onvalue=1, offvalue=0, command=hit_me)
-check_temp = tk.Checkbutton(window, text='Temp',variable=temp_on, onvalue=1, offvalue=0, command=hit_me)
-check_humid = tk.Checkbutton(window, text='Humid',variable=humid_on, onvalue=1, offvalue=0, command=hit_me)
+check_pm10 = tk.Checkbutton(window, text='Pm1.0',variable=pm10_on, onvalue=1, offvalue=0)
+check_pm25 = tk.Checkbutton(window, text='Pm2.5',variable=pm25_on, onvalue=1, offvalue=0)
+check_pm100 = tk.Checkbutton(window, text='Pm10.0',variable=pm100_on, onvalue=1, offvalue=0)
+check_temp = tk.Checkbutton(window, text='Temp',variable=temp_on, onvalue=1, offvalue=0)
+check_humid = tk.Checkbutton(window, text='Humid',variable=humid_on, onvalue=1, offvalue=0)
 
 entry_start = tk.Entry(window, show = None)
 entry_end = tk.Entry(window, show = None)
