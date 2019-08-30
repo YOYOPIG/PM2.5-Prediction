@@ -2,6 +2,7 @@ import tkinter as tk  # Use tkinter as GUI
 from tkinter import *
 import json
 import datetime as dt
+from datetime import timedelta
 import pytz
 import requests
 from display.display import Display
@@ -64,6 +65,59 @@ def get_feat_hour_avg(pos, ft):
     for i in range(24):
         avg_pm25_list[i] = total_pm25_list[i] / data_num_list[i]
     return avg_pm25_list
+
+def get_feat_in_time(time_interval, pos, ft):
+    ret_list = []
+    cleaned_data = []
+    tmp_ft = 0
+    data_num = 0
+    cur_month = time_interval[0].month
+    cur_day = time_interval[0].day
+    cur_hr = 0
+    data = get_pos_data(pos)
+    for item in data:
+        if (item.get('date')>time_interval[0]) and (item.get('date')<time_interval[1]):
+            cleaned_data.append(item)
+    cleaned_data = cleaned_data[1:]
+    if len(cleaned_data)==0:
+        dt = time_interval[1] - time_interval[0]
+        for i in range(int(dt.total_seconds()//3600 + 1)):
+            ret_list.append(0)
+        return ret_list
+    # cur_month = cleaned_data[0].get('date').month
+    # cur_day = cleaned_data[0].get('date').day
+    # cur_hr = cleaned_data[0].get('date').hour
+    for item in cleaned_data:
+        if item.get('date').month!=cur_month or item.get('date').day!=cur_day or item.get('date').hour!=cur_hr:
+            if data_num == 0:
+                ret_list.append(0)
+            else:
+                ret_list.append(tmp_ft / data_num)
+            tmp_ft = 0
+            data_num = 0
+            cur_hr += 1
+            if cur_hr==24:
+                cur_hr = 0
+                cur_day += 1
+                if cur_day==32 or (cur_day==31 and cur_month==6):
+                    cur_day = 1
+                    cur_month += 1
+        tmp_ft += item.get(ft)
+        data_num+=1
+    if data_num == 0:
+        ret_list.append(0)
+    else:
+        ret_list.append(tmp_ft / data_num)
+    while time_interval[1].month>cur_month or time_interval[1].day>cur_day:
+        cur_hr += 1
+        if cur_hr==24:
+            cur_hr = 0
+            cur_day += 1
+            if cur_day==32 or (cur_day==31 and cur_month==6):
+                cur_day = 1
+                cur_month += 1
+        ret_list.append(0)
+    return ret_list
 
 def get_focus_features():
     global pm10_on
@@ -130,30 +184,34 @@ def clear_plot():
     for widget in graph_frame.winfo_children():
         widget.destroy()
 
-# no pos, ft one, time off
+# no pos, ft one, time on
 def animation_on_map():
     tar_feature =  get_focus_features()
+    in_time = get_input_time()
     img = plt.imread("ncku.jpg") # background img
-    ans = [] # arr of size 24, saving 24 z values
+    ans = [] # arr of size 24, saving 24 z grids -> array to save z grids of all time
     xpos = [160, 260, 240, 60, 100, 270, 190, 350]
     ypos = [270, 255, 30, 210, 125, 120, 145, 140]
-    avg_pm25_data = [] # avg_pm25_data[8pos][24hr]
+    avg_pm25_data = [] # avg_pm25_data[8pos][hr (default 24)]
+    #get_feat_in_time(in_time, 0, tar_feature[0])
     for i in range(8):
-        avg_pm25_data.append(get_feat_hour_avg(i,tar_feature[0])) 
+        avg_pm25_data.append(get_feat_in_time(in_time, i,tar_feature[0]))
+    data_num = len(avg_pm25_data[0])
     x = range(400)
     y = range(300)
     X, Y = np.meshgrid(x, y)
     z = np.zeros(120000).reshape(300, 400)
     for i in range(8):
-        z[ypos[i]][xpos[i]] = avg_pm25_data[i][0]
+        z[ypos[i]][xpos[i]] = 100
     z[0][:] = 1
     z[299][:] = 1
     for i in range(300):
         z[i][0] = 1
         z[i][399] = 1
     z[z==0] = np.nan
-    for t in range(24):
+    for t in range(data_num):
         for i in range(8):
+            print(i)
             z[ypos[i]][xpos[i]] = avg_pm25_data[i][t] # set the 8 positions w/ sensor
         # Interpolation
         #mask invalid values
@@ -166,6 +224,8 @@ def animation_on_map():
                             (X, Y),
                             method='cubic')
         ans.append(GD1)
+    
+    # Plot the results
     fig,ax = plt.subplots()
     # print(ans)
     # def animate2(i):
@@ -178,19 +238,42 @@ def animation_on_map():
     # interval = 0.5 #sec
     # anim = animation.FuncAnimation(fig, animate2, 24, interval=interval*1e+3,repeat_delay=1000)
     plt.imshow(img, extent=[0, 400, 0, 300])
-    ax.contourf(ans[0], alpha=.6)
-    ax.set_title('Avg. ' + tar_feature[0] + ' at time 0')
+    plt.axis('off')
+    CS = ax.contourf(ans[0], alpha=.6)
+    cb = fig.colorbar(CS)
+    year = in_time[0].year
+    month = in_time[0].month
+    day = in_time[0].day
+    hr = in_time[0].hour
+    ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(year) + '/' + str(month) + '/' + str(day) + ' ' + str(hr))
     clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
     def update_fig(t):
         ax.clear()
         plt.imshow(img, extent=[0, 400, 0, 300])
-        ax.contourf(ans[int(t)], alpha=.6)
-        ax.set_title('Avg. ' + tar_feature[0] + ' at time ' + t)
+        CS = ax.contourf(ans[int(t)], alpha=.6)
+        # cb.remove()
+        # cb = fig.colorbar(CS)
+        #time = in_time[0] + timedelta(hours=t)
+        year = in_time[0].year
+        month = in_time[0].month
+        day = in_time[0].day
+        hr = in_time[0].hour
+        dh = int(t) % 24
+        dd = int(int(t)/24)
+        hr = in_time[0].hour + dh
+        day = in_time[0].day + dd
+        if hr > 23:
+            hr -= 24
+            day == 1
+        if day==32 or (day==31 and month==6):
+            day = 1
+            month += 1
+        ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(year) + '/' + str(month) + '/' + str(day) + ' ' + str(hr))
         canvas.draw()# = FigureCanvasTkAgg(fig, graph_frame)
-    s = tk.Scale(graph_frame, label='Select time', from_=0, to=23, orient=tk.HORIZONTAL,
-             length=600, showvalue=0, tickinterval=1, resolution=1, command=update_fig)
+    s = tk.Scale(graph_frame, label='Select time', from_=0, to=data_num-1, orient=tk.HORIZONTAL,
+             length=600, showvalue=0, tickinterval=data_num-1, resolution=1, command=update_fig)
     s.pack()
 
 # pos on, ft on, Time on (need clear data?)
