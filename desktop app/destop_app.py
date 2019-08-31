@@ -1,5 +1,6 @@
 import tkinter as tk  # Use tkinter as GUI
 from tkinter import *
+from tkinter.ttk import *
 import json
 import datetime as dt
 from datetime import timedelta
@@ -14,6 +15,11 @@ from scipy import stats
 import scipy.interpolate as interp
 import matplotlib.animation as animation 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+
+# Global constants
+fig_width = 12
+fig_height = 10
+
 # Define helper functions
 def download_data():
     for i in range(8):
@@ -184,6 +190,29 @@ def clear_plot():
     for widget in graph_frame.winfo_children():
         widget.destroy()
 
+def calculate_time(start_time, hr_passed):
+    year = start_time.year
+    month = start_time.month
+    day = start_time.day
+    hr = start_time.hour
+    dh = int(hr_passed) % 24
+    dd = int(int(hr_passed)/24)
+    hr = start_time.hour + dh
+    day = start_time.day + dd
+    if hr > 23:
+        hr -= 24
+        day += 1
+    while(1):
+        if day>=31 and month==6:
+            day -= 30
+            month += 1
+        elif day>=32:
+            day -= 31
+            month += 1
+        else:
+            break
+    return [year, month, day, hr]
+
 # no pos, ft one, time on
 def animation_on_map():
     tar_feature =  get_focus_features()
@@ -211,7 +240,7 @@ def animation_on_map():
     z[z==0] = np.nan
     for t in range(data_num):
         for i in range(8):
-            print(i)
+            # print(i)
             z[ypos[i]][xpos[i]] = avg_pm25_data[i][t] # set the 8 positions w/ sensor
         # Interpolation
         #mask invalid values
@@ -226,17 +255,22 @@ def animation_on_map():
         ans.append(GD1)
     
     # Plot the results
-    fig,ax = plt.subplots()
-    # print(ans)
+    fig,ax = plt.subplots( figsize=(12, 8))
+    ###########
     # def animate2(i):
     #     ax.clear()
     #     plt.imshow(img, extent=[0, 400, 0, 300])
-    #     ax.contourf(ans[i], alpha=.6)
-    #     ax.set_title('Avg. PM2.5 at time %03d'%(i))
+    #     plt.axis('off')
+    #     time = calculate_time(in_time[0], i)
+    #     CS = ax.contourf(ans[i], alpha=.6)
+    #     cb = fig.colorbar(CS)
+    #     ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(time[0]) + '/' + str(time[1]) + '/' + str(time[2]) + ' ' + str(time[3]) + ':00', fontsize=20)
     # # canvas = FigureCanvasTkAgg(fig, graph_frame)
     # # canvas.get_tk_widget().pack()
     # interval = 0.5 #sec
-    # anim = animation.FuncAnimation(fig, animate2, 24, interval=interval*1e+3,repeat_delay=1000)
+    # anim = animation.FuncAnimation(fig, animate2, data_num, interval=interval*1e+3,repeat_delay=1000)
+    # plt.show()
+    ############
     plt.imshow(img, extent=[0, 400, 0, 300])
     plt.axis('off')
     CS = ax.contourf(ans[0], alpha=.6)
@@ -245,33 +279,20 @@ def animation_on_map():
     month = in_time[0].month
     day = in_time[0].day
     hr = in_time[0].hour
-    ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(year) + '/' + str(month) + '/' + str(day) + ' ' + str(hr))
+    ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(year) + '/' + str(month) + '/' + str(day) + ' ' + str(hr) + ':00', fontsize=20)
     clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
     def update_fig(t):
         ax.clear()
         plt.imshow(img, extent=[0, 400, 0, 300])
+        plt.axis('off')
+        cb.set_clim(vmin=ans[int(t)].min(),vmax=ans[int(t)].max()) 
+        cb.draw_all() 
         CS = ax.contourf(ans[int(t)], alpha=.6)
-        # cb.remove()
-        # cb = fig.colorbar(CS)
-        #time = in_time[0] + timedelta(hours=t)
-        year = in_time[0].year
-        month = in_time[0].month
-        day = in_time[0].day
-        hr = in_time[0].hour
-        dh = int(t) % 24
-        dd = int(int(t)/24)
-        hr = in_time[0].hour + dh
-        day = in_time[0].day + dd
-        if hr > 23:
-            hr -= 24
-            day == 1
-        if day==32 or (day==31 and month==6):
-            day = 1
-            month += 1
-        ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(year) + '/' + str(month) + '/' + str(day) + ' ' + str(hr))
-        canvas.draw()# = FigureCanvasTkAgg(fig, graph_frame)
+        time = calculate_time(in_time[0], t)
+        ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(time[0]) + '/' + str(time[1]) + '/' + str(time[2]) + ' ' + str(time[3]) + ':00', fontsize=20)
+        canvas.draw()
     s = tk.Scale(graph_frame, label='Select time', from_=0, to=data_num-1, orient=tk.HORIZONTAL,
              length=600, showvalue=0, tickinterval=data_num-1, resolution=1, command=update_fig)
     s.pack()
@@ -469,6 +490,57 @@ def plot_boxplot():
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
+def plt_scatter_one_pos():
+    tar_feature =  get_focus_features()
+    tar_positions = get_focus_positions()
+    in_time = get_input_time()
+    data = []
+    # for i in tar_positions:
+    #     data = data + get_pos_data(i)
+    data = get_pos_data(tar_positions[0])
+    # convert data to dataframe
+    df = pd.DataFrame(data)
+    # Select the duration
+    df = df.loc[ df['date'] >= in_time[0] ]
+    df = df.loc[ df['date'] <= in_time[1] ]
+    # rename the names of columns
+    df = df.rename(columns = {'pm10': 'pm1.0', 'pm25': 'pm2.5', 'pm100': 'pm10.0'})
+    # Add columns for hour_minute, weekday
+    df['hour_minute'] = df['date'].apply(lambda x: x.hour+x.minute/60)
+    df['weekday'] = df['date'].apply(lambda x: x.weekday)
+    # set the order of the columns & discard some columns
+    df = df[['hour_minute', 'pm1.0', 'pm2.5', 'pm10.0', 'temp', 'humidity', 'weekday']]
+    # Data cleaning
+    df = df.loc[df['pm2.5'] < 120]
+    df = df.loc[df['humidity'] <= 100]
+    # choose x, y   
+    feature_dict = {'pm10': 'pm1.0', 'pm25': 'pm2.5', 'pm100': 'pm10.0', 'temp': 'temp', 'humidity': 'humidity'}
+    unit_dict = {'pm10': '(μg/m^3)', 'pm25': '(μg/m^3)', 'pm100': '(μg/m^3)', 'temp': '(°C)', 'humidity': '(%)'}
+    # print(feature_dict)
+    x_index = tar_feature[0]
+    y_index = tar_feature[1]
+    x_name = feature_dict[x_index]
+    y_name = feature_dict[y_index]
+    x_unit = unit_dict[x_index]
+    y_unit = unit_dict[y_index]
+    # label = self.pos[0]
+    x = np.array(df[x_name])
+    y = np.array(df[y_name])
+    # plot scatter plot
+    fig, ax = plt.subplots(figsize=(12, 7))
+    plt.style.use('ggplot')
+    ax.scatter(x, y)#, label=label)
+    # plt.legend(loc='upper left', bbox_to_anchor=(1,1), title='position')
+    plt.xlabel('%s %s' % (x_name, x_unit))
+    plt.ylabel('%s %s' % (y_name, y_unit))
+    plt.title('Scatter plot (from %s/%s/%s to %s/%s/%s) (after data cleaning)' 
+              % (in_time[0].year, in_time[0].month, in_time[0].day,
+                 in_time[1].year, in_time[1].month, in_time[1].day))
+    #plt.show()
+    clear_plot()
+    canvas = FigureCanvasTkAgg(fig, graph_frame)
+    canvas.get_tk_widget().pack()
+
 
 
 # Main program starts here
@@ -503,8 +575,12 @@ plot_time = tk.IntVar()
 
 # Declare widgets
 button_dl_data = tk.Button(window, text='Download / Update data', font=(norm_font, 12), width=30, height=1, command=download_data)
-button_scatter = tk.Button(window, text='Scatter', font=(norm_font, 12), width=10, height=1, command=plt_scatter)
-button_line = tk.Button(window, text='Line', font=(norm_font, 12), width=10, height=1, command=plot_line_chart)
+button_scatter = tk.Button(window, text='Scatter', font=(norm_font, 12), width=10, height=1, command=plt_scatter_one_pos)
+# Creating a photoimage object to use image 
+photo = PhotoImage(file = "./resources/line_chart.png") 
+# Resizing image to fit on button 
+photoimage = photo.subsample(3, 3) 
+button_line = tk.Button(window, text='Line', font=(norm_font, 12), image = photoimage,compound = LEFT, command=plot_line_chart)
 button_detail = tk.Button(window, text='Details', font=(norm_font, 12), width=10, height=1, command=plot_scatter_time)
 button_corr = tk.Button(window, text='Correlation', font=(norm_font, 12), width=10, height=1, command=plot_corr)
 button_box = tk.Button(window, text='Box plot', font=(norm_font, 12), width=10, height=1, command=plot_boxplot)
