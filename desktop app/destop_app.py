@@ -259,7 +259,7 @@ def animation_on_map():
         ans.append(GD1)
     
     # Plot the results
-    fig,ax = plt.subplots( figsize=(fig_width, fig_height))
+    fig,ax = plt.subplots( figsize=(fig_width, fig_height-2))
     ###########
     # def animate2(i):
     #     ax.clear()
@@ -291,8 +291,10 @@ def animation_on_map():
         ax.clear()
         plt.imshow(img, extent=[0, 400, 0, 300])
         plt.axis('off')
-        cb.set_clim(vmin=ans[int(t)].min(),vmax=ans[int(t)].max()) 
-        cb.draw_all() 
+        # cb.set_clim(vmin=ans[int(t)].min(),vmax=ans[int(t)].max())
+        # cbar_ticks = np.linspace(ans[int(t)].min(), ans[int(t)].max(), num=6, endpoint=True)
+        # cb.set_ticks(cbar_ticks) 
+        # cb.draw_all() 
         CS = ax.contourf(ans[int(t)], alpha=.6)
         time = calculate_time(in_time[0], t)
         ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(time[0]) + '/' + str(time[1]) + '/' + str(time[2]) + ' ' + str(time[3]) + ':00', fontsize=20)
@@ -315,11 +317,18 @@ def plot_line_chart():
     df = df.loc[ df['date'] < in_time[1] ]
     # Plot y versus x(time)
     colors = ['navy', 'turquoise', 'darkorange', 'olive', 'lightgray', 'pink', 'lightgreen']
+    pos_name = {0:'Social Science building',1:'Medical building',2:'Sheng-li dorm',3:'Activity Center',4:'Architecture building',
+                5:'Computer Science building',6:'Computer & Network center',7:'Instrument Dev. Center'}
+    lbl_name = {'pm10' : 'Pm1.0', 'pm25' : 'Pm2.5', 'pm100' : 'Pm10.0', 'temp' : 'Temperature', 'humidity' : 'Humidity'}
     label = tar_feature#['pm10', 'pm25', 'pm100', 'temp', 'humidity']
-    label_display = tar_feature#['pm1.0', 'pm2.5', 'pm10.0', 'temperature', 'humidity']
+    label_display = []
+    for item in tar_feature:
+        label_display.append(lbl_name[item])
     fig,ax = plt.subplots(figsize=(fig_width, fig_height))
+    ax.set_title('Line chart of ' + pos_name[tar_positions[0]], fontsize=20)
     for i in range(len(label)):
         ax.plot(df['date'], df[label[i]], c=colors[i], label=label_display[i], lw=1, ls='-')
+        ax.legend()
         plt.xticks(rotation=90)
     # ax.plot(df['date'], df[label[0]], c=colors[0], label=label_display[0], lw=1, ls='-')
     # ax.plot(df['date'], df[label[1]], c=colors[1], label=label_display[1], lw=1, ls='-')
@@ -357,10 +366,16 @@ def plot_scatter_time():
     df = df.loc[ df['date'] > in_time[0] ]
     df = df.loc[ df['date'] < in_time[1] ]
     fig,ax = plt.subplots(figsize=(fig_width, fig_height))
-    labels = ['0~6', '6~12', '12~18', '18~24']
+    labels = ['0:00 ~ 6:00', '6:00 ~ 12:00', '12:00 ~ 18:00', '18:00 ~ 24:00']
     colors = ['navy', 'turquoise', 'darkorange', 'y']
+    plt.xticks(rotation=90)
+    pos_name = {0:'Social Science building',1:'Medical building',2:'Sheng-li dorm',3:'Activity Center',4:'Architecture building',
+                5:'Computer Science building',6:'Computer & Network center',7:'Instrument Dev. Center'}
+    lbl_name = {'pm10' : 'Pm1.0', 'pm25' : 'Pm2.5', 'pm100' : 'Pm10.0', 'temp' : 'temperature', 'humidity' : 'humidity'}
+    ax.set_title('Time separated scatter plot of ' + lbl_name[tar_feature[0]] + ' at ' + pos_name[tar_positions[0]], fontsize=18)
     for i, dff in df.groupby('color'):
       ax.scatter(dff['date'], dff[tar_feature[0]], c=colors[i], label=labels[i])
+      ax.legend()
     clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
@@ -382,19 +397,31 @@ def plot_corr():
     df['month'] = df['date'].apply(lambda x: x.month)
     df['day'] = df['date'].apply(lambda x: x.day)
     df['weekday'] = df['date'].apply(lambda x: x.weekday)
-    df['hour_minute'] = df['date'].apply(lambda x: x.hour+x.minute/60)
-    # Add a column that equals to hour_minute-shift_value
-    shift_value = 11
-    plus_value = 24 + shift_value
-    column_name = 'hour_minute_minus%d' % shift_value
-    df[column_name] = df['hour_minute'].apply(lambda x: x-shift_value)
-    df[column_name] = df[column_name].apply(lambda x: x+plus_value if x<0 else x)
+    # df['hour_minute'] = df['date'].apply(lambda x: x.hour+x.minute/60)
+    # # Add a column that equals to hour_minute-shift_value
+    # shift_value = 11
+    # plus_value = 24 + shift_value
+    # column_name = 'hour_minute_minus%d' % shift_value
+    # df[column_name] = df['hour_minute'].apply(lambda x: x-shift_value)
+    # df[column_name] = df[column_name].apply(lambda x: x+plus_value if x<0 else x)
     # set the order of the columns
-    df = df[['month', 'day', 'weekday', 'hour_minute', column_name] + tar_feature]
+    #df = df[['month', 'day', 'weekday', 'hour_minute', column_name] + tar_feature]
+    date_ft = []
+    if in_time[1].month > in_time[0].month and in_time[1].day > in_time[0].day:
+        date_ft.append('month')
+        date_ft.append('day')
+        date_ft.append('weekday')
+    elif in_time[1].day - in_time[0].day >= 7:
+        date_ft.append('day')
+        date_ft.append('weekday')
+    elif in_time[1].day - in_time[0].day > 1:
+        date_ft.append('day')
+    df = df[date_ft + tar_feature]
     # compute the correlation
     corr = df.corr()
     # plot correlation matrix
     fig, ax = plt.subplots(figsize=(fig_width, fig_height))
+    ax.set_title('Correlation between different features', fontsize=20)
     sns.heatmap(corr, 
                 xticklabels=corr.columns.values,
                 yticklabels=corr.columns.values,
@@ -459,15 +486,23 @@ def plt_scatter():
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
-# # time off, pos on, no ft
+# # time on, pos on, no ft
 def plot_boxplot():
     tar_feature =  get_focus_features()
     tar_positions = get_focus_positions()
+    in_time = get_input_time()
     data = []
+    pos_lbl = []
+    pos_name = {0:'Social Science building',1:'Medical building',2:'Sheng-li dorm',3:'Activity Center',4:'Architecture building',
+                5:'Computer Science building',6:'Computer & Network center',7:'Instrument Dev. Center'}
     for i in tar_positions:
         data = data + get_pos_data(i)
+        pos_lbl.append(pos_name[i])
     # convert data to dataframe
     df = pd.DataFrame(data)
+    # Select the duration
+    df = df.loc[ df['date'] > in_time[0] ]
+    df = df.loc[ df['date'] < in_time[1] ]
     # Select position 0~7
     df = df.loc[ df['position'] <= 7 ]
     # rename the names of columns
@@ -478,18 +513,22 @@ def plot_boxplot():
     fig, axes = plt.subplots(3, 1, sharex=True, figsize=(fig_width, fig_height))
     # subplot 1
     ax = sns.boxplot(x='position', y='value', data=df_melt, hue='Particulate Matter (PM)', palette='Set3', ax=axes[0])
+    ax.set_title('Boxplot of all features', fontsize=20)
     ax.axis(ymin=0, ymax=100)
     ax.set_xlabel('')
     ax.set_ylabel('(μg/m^3)')
     # subplot 2
     ax = sns.boxplot(x='position', y='temp', data=df, color='orange', ax=axes[1])
+    ax.set_title('Boxplot of temperature', fontsize=12)
     ax.axis(ymin=20, ymax=40)
     ax.set_xlabel('')
     ax.set_ylabel('temp(°C)')
     # subplot 3
     ax = sns.boxplot(x='position', y='humidity', data=df, color='cyan', ax=axes[2])
+    ax.set_title('Boxplot of humidity', fontsize=12)
     ax.axis(ymin=15, ymax=100)
     ax.set_ylabel('humidity(%)')
+    ax.set_xticklabels(pos_lbl)
     clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
@@ -520,6 +559,8 @@ def plt_scatter_one_pos():
     # choose x, y   
     feature_dict = {'pm10': 'pm1.0', 'pm25': 'pm2.5', 'pm100': 'pm10.0', 'temp': 'temp', 'humidity': 'humidity'}
     unit_dict = {'pm10': '(μg/m^3)', 'pm25': '(μg/m^3)', 'pm100': '(μg/m^3)', 'temp': '(°C)', 'humidity': '(%)'}
+    pos_name = {0:'Social Science building',1:'Medical building',2:'Sheng-li dorm',3:'Activity Center',4:'Architecture building',
+                5:'Computer Science building',6:'Computer & Network center',7:'Instrument Dev. Center'}
     # print(feature_dict)
     x_index = tar_feature[0]
     y_index = tar_feature[1]
@@ -537,9 +578,10 @@ def plt_scatter_one_pos():
     # plt.legend(loc='upper left', bbox_to_anchor=(1,1), title='position')
     plt.xlabel('%s %s' % (x_name, x_unit))
     plt.ylabel('%s %s' % (y_name, y_unit))
-    plt.title('Scatter plot (from %s/%s/%s to %s/%s/%s) (after data cleaning)' 
+    plt.title('Scatter plot (from %s/%s/%s to %s/%s/%s) at %s' 
               % (in_time[0].year, in_time[0].month, in_time[0].day,
-                 in_time[1].year, in_time[1].month, in_time[1].day))
+                 in_time[1].year, in_time[1].month, in_time[1].day,
+                 pos_name[tar_positions[0]]), fontsize=18)
     #plt.show()
     clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
@@ -552,7 +594,7 @@ def plt_scatter_one_pos():
 window = tk.Tk()
 window.title('Air Monitor')
 #window.attributes('-fullscreen', True)
-window.geometry('1880x1050') # Set window size(L*W)
+window.geometry('1880x1000') # Set window size(L*W)
 #window.configure(background='#42444d')
 
 background_image = PhotoImage(file = "./resources/bg.png")
@@ -618,19 +660,19 @@ button_corr = tk.Button(window, image = corr_icon, compound = LEFT, command=plot
 button_box = tk.Button(window, image = box_icon, compound = LEFT, command=plot_boxplot, bd = 0, bg = bg_color)
 button_map = tk.Button(window, image = map_icon, compound = LEFT, command=animation_on_map, bd = 0, bg = bg_color)
 
-check_p0 = tk.Checkbutton(window, text='Pos0',variable=pos0_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
-check_p1 = tk.Checkbutton(window, text='Pos1',variable=pos1_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
-check_p2 = tk.Checkbutton(window, text='Pos2',variable=pos2_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
-check_p3 = tk.Checkbutton(window, text='Pos3',variable=pos3_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
-check_p4 = tk.Checkbutton(window, text='Pos4',variable=pos4_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
-check_p5 = tk.Checkbutton(window, text='Pos5',variable=pos5_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
-check_p6 = tk.Checkbutton(window, text='Pos6',variable=pos6_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
-check_p7 = tk.Checkbutton(window, text='Pos7',variable=pos7_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p0 = tk.Checkbutton(window, text='社科',variable=pos0_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p1 = tk.Checkbutton(window, text='成杏',variable=pos1_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p2 = tk.Checkbutton(window, text='勝利',variable=pos2_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p3 = tk.Checkbutton(window, text='一活',variable=pos3_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p4 = tk.Checkbutton(window, text='建築',variable=pos4_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p5 = tk.Checkbutton(window, text='資訊',variable=pos5_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p6 = tk.Checkbutton(window, text='計中',variable=pos6_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p7 = tk.Checkbutton(window, text='自強',variable=pos7_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
 
 lbl_title = tk.Label(window, image = logo_icon, bg = bg_color, fg = fg_color)
-lbl_feature = tk.Label(window, text='Select Features',font=(bold_font, 10), width=15, height=2, bd = 0, bg = bg_color, fg = fg_color)
-lbl_pos = tk.Label(window, text='Choose Positions',font=(bold_font, 10), width=15, height=2, bg = bg_color, fg = fg_color)
-lbl_t = tk.Label(window, text='Time interval', font=(bold_font, 10), width=12, height=2, bg = bg_color, fg = fg_color)
+lbl_feature = tk.Label(window, text='Select Features',font=(bold_font, 12), width=15, height=2, bd = 0, bg = bg_color, fg = fg_color)
+lbl_pos = tk.Label(window, text='Choose Positions',font=(bold_font, 12), width=15, height=2, bg = bg_color, fg = fg_color)
+lbl_t = tk.Label(window, text='Time interval', font=(bold_font, 12), width=12, height=2, bg = bg_color, fg = fg_color)
 lbl_tf = tk.Label(window, text='(YYYY MM DD)', font=(norm_font, 10), width=12, height=2, bg = bg_color, fg = fg_color)
 lbl_start = tk.Label(window, text='Start time',font=(norm_font, 10), width=10, height=2, bg = bg_color, fg = fg_color)
 lbl_end = tk.Label(window, text='End time',font=(norm_font, 10), width=10, height=2, bg = bg_color, fg = fg_color)
@@ -647,7 +689,7 @@ entry_end = tk.Entry(window, show = None)
 # Place widgets on the window
 
 lbl_title.grid(row=0, column=0, columnspan=3, padx=2, pady=2)
-lbl_pos.grid(row=1, column=0, columnspan=3, padx=2, pady=2)
+lbl_pos.grid(row=1, column=0, sticky="W", columnspan=3, padx=2, pady=10)
 check_p0.grid(row=2, column=0, padx=2, pady=2)
 check_p1.grid(row=2, column=1, padx=2, pady=2)
 check_p2.grid(row=2, column=2, padx=2, pady=2)
@@ -657,7 +699,7 @@ check_p5.grid(row=3, column=2, padx=2, pady=2)
 check_p6.grid(row=4, column=0, padx=2, pady=2)
 check_p7.grid(row=4, column=1, padx=2, pady=2)
 
-lbl_feature.grid(row=5, column=0, columnspan=3, padx=2, pady=2)
+lbl_feature.grid(row=5, column=0, sticky="W", columnspan=3, padx=2, pady=10)
 check_pm10.grid(row=6, column=0, padx=2, pady=2)
 check_pm25.grid(row=6, column=1, padx=2, pady=2)
 check_pm100.grid(row=6, column=2, padx=2, pady=2)
