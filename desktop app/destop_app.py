@@ -51,6 +51,10 @@ def get_pos_data(pos):
             taiwan_aware = utc_aware.astimezone(pytz.timezone('Asia/Taipei'))
             value['date'] = taiwan_aware
             value['position'] = pos
+        for item in data:
+            if item['pm10'] > 300 or item['pm25'] > 300 or item['pm100'] > 300  or item['humidity'] > 100 or item['temp'] > 80:
+                data.remove(item)
+        # print(data)
         return data
 
 def get_feat_hour_avg(pos, ft):
@@ -255,7 +259,7 @@ def animation_on_map():
         ans.append(GD1)
     
     # Plot the results
-    fig,ax = plt.subplots( figsize=(12, 8))
+    fig,ax = plt.subplots( figsize=(fig_width, fig_height))
     ###########
     # def animate2(i):
     #     ax.clear()
@@ -313,7 +317,7 @@ def plot_line_chart():
     colors = ['navy', 'turquoise', 'darkorange', 'olive', 'lightgray', 'pink', 'lightgreen']
     label = tar_feature#['pm10', 'pm25', 'pm100', 'temp', 'humidity']
     label_display = tar_feature#['pm1.0', 'pm2.5', 'pm10.0', 'temperature', 'humidity']
-    fig,ax = plt.subplots()
+    fig,ax = plt.subplots(figsize=(fig_width, fig_height))
     for i in range(len(label)):
         ax.plot(df['date'], df[label[i]], c=colors[i], label=label_display[i], lw=1, ls='-')
         plt.xticks(rotation=90)
@@ -352,7 +356,7 @@ def plot_scatter_time():
     # Select the duration
     df = df.loc[ df['date'] > in_time[0] ]
     df = df.loc[ df['date'] < in_time[1] ]
-    fig,ax = plt.subplots()
+    fig,ax = plt.subplots(figsize=(fig_width, fig_height))
     labels = ['0~6', '6~12', '12~18', '18~24']
     colors = ['navy', 'turquoise', 'darkorange', 'y']
     for i, dff in df.groupby('color'):
@@ -390,7 +394,7 @@ def plot_corr():
     # compute the correlation
     corr = df.corr()
     # plot correlation matrix
-    fig, ax = plt.subplots(figsize=(10, 9))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     sns.heatmap(corr, 
                 xticklabels=corr.columns.values,
                 yticklabels=corr.columns.values,
@@ -427,7 +431,7 @@ def plt_scatter():
     df = df[(np.abs(stats.zscore(df)) < 3).all(axis=1)]
     # plot scatter plot
     # subplot 1
-    fig = plt.figure(figsize=(10,5))
+    fig = plt.figure(figsize=(fig_width, fig_height))
     ax = plt.subplot(221)
     x = np.array(df['temp'])
     y = np.array(df['pm2.5'])
@@ -471,7 +475,7 @@ def plot_boxplot():
     # construct a new dataframe used to plot boxplot 1
     df_melt = pd.melt(df, id_vars=['position'], value_vars=['pm1.0', 'pm2.5', 'pm10.0'], var_name='Particulate Matter (PM)')
     # plot three boxplots
-    fig, axes = plt.subplots(3, 1, sharex=True, figsize=(12, 8))
+    fig, axes = plt.subplots(3, 1, sharex=True, figsize=(fig_width, fig_height))
     # subplot 1
     ax = sns.boxplot(x='position', y='value', data=df_melt, hue='Particulate Matter (PM)', palette='Set3', ax=axes[0])
     ax.axis(ymin=0, ymax=100)
@@ -527,7 +531,7 @@ def plt_scatter_one_pos():
     x = np.array(df[x_name])
     y = np.array(df[y_name])
     # plot scatter plot
-    fig, ax = plt.subplots(figsize=(12, 7))
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     plt.style.use('ggplot')
     ax.scatter(x, y)#, label=label)
     # plt.legend(loc='upper left', bbox_to_anchor=(1,1), title='position')
@@ -546,14 +550,25 @@ def plt_scatter_one_pos():
 # Main program starts here
 # Create window
 window = tk.Tk()
-window.title('Air Quality Visualizer')
-window.geometry('1000x600') # Set window size(L*W)
+window.title('Air Monitor')
+#window.attributes('-fullscreen', True)
+window.geometry('1880x1050') # Set window size(L*W)
 #window.configure(background='#42444d')
+
+background_image = PhotoImage(file = "./resources/bg.png")
+background_label = tk.Label(window, image=background_image)
+background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
 graph_frame = tk.Frame(window)
 
 # Set fonts
 bold_font = 'Open sans bold'
 norm_font = 'Open sans'
+
+# Set colors
+bg_color = '#2f3136'
+fg_color = 'white'
+checkbox_color = '#7a6bff'
 
 # Variable declarations for ui
 pos0_on = tk.BooleanVar()
@@ -573,76 +588,96 @@ humid_on = tk.BooleanVar()
 var = tk.StringVar()
 plot_time = tk.IntVar()
 
-# Declare widgets
-button_dl_data = tk.Button(window, text='Download / Update data', font=(norm_font, 12), width=30, height=1, command=download_data)
-button_scatter = tk.Button(window, text='Scatter', font=(norm_font, 12), width=10, height=1, command=plt_scatter_one_pos)
+# Icons
 # Creating a photoimage object to use image 
-photo = PhotoImage(file = "./resources/line_chart.png") 
+pi_scatter = PhotoImage(file = "./resources/scatter_icon.png") 
+pi_detail = PhotoImage(file = "./resources/time_icon.png") 
+pi_corr = PhotoImage(file = "./resources/corr_icon.png") 
+pi_box = PhotoImage(file = "./resources/boxplot_icon.png") 
+pi_map = PhotoImage(file = "./resources/map_icon.png") 
+pi_line = PhotoImage(file = "./resources/line_icon.png")
+pi_dl = PhotoImage(file = "./resources/dl_icon.png")
+pi_logo = PhotoImage(file = "./resources/logo.png")
 # Resizing image to fit on button 
-photoimage = photo.subsample(3, 3) 
-button_line = tk.Button(window, text='Line', font=(norm_font, 12), image = photoimage,compound = LEFT, command=plot_line_chart)
-button_detail = tk.Button(window, text='Details', font=(norm_font, 12), width=10, height=1, command=plot_scatter_time)
-button_corr = tk.Button(window, text='Correlation', font=(norm_font, 12), width=10, height=1, command=plot_corr)
-button_box = tk.Button(window, text='Box plot', font=(norm_font, 12), width=10, height=1, command=plot_boxplot)
-button_map = tk.Button(window, text='Map', font=(norm_font, 12), width=10, height=1, command=animation_on_map)
+sample_rate = 8
+scatter_icon = pi_scatter.subsample(sample_rate, sample_rate)
+detail_icon = pi_detail.subsample(sample_rate, sample_rate) 
+corr_icon = pi_corr.subsample(sample_rate, sample_rate) 
+box_icon = pi_box.subsample(sample_rate, sample_rate) 
+map_icon = pi_map.subsample(sample_rate, sample_rate) 
+line_icon = pi_line.subsample(sample_rate, sample_rate) 
+dl_icon = pi_dl.subsample(3, 3)
+logo_icon = pi_logo.subsample(1, 1)
 
-check_p0 = tk.Checkbutton(window, text='Pos0',variable=pos0_on, onvalue=1, offvalue=0)
-check_p1 = tk.Checkbutton(window, text='Pos1',variable=pos1_on, onvalue=1, offvalue=0)
-check_p2 = tk.Checkbutton(window, text='Pos2',variable=pos2_on, onvalue=1, offvalue=0)
-check_p3 = tk.Checkbutton(window, text='Pos3',variable=pos3_on, onvalue=1, offvalue=0)
-check_p4 = tk.Checkbutton(window, text='Pos4',variable=pos4_on, onvalue=1, offvalue=0)
-check_p5 = tk.Checkbutton(window, text='Pos5',variable=pos5_on, onvalue=1, offvalue=0)
-check_p6 = tk.Checkbutton(window, text='Pos6',variable=pos6_on, onvalue=1, offvalue=0)
-check_p7 = tk.Checkbutton(window, text='Pos7',variable=pos7_on, onvalue=1, offvalue=0)
+# Declare widgets
+button_dl_data = tk.Button(window, image = dl_icon, compound = LEFT, command=download_data, bd = 0, bg = bg_color)
+button_scatter = tk.Button(window, image = scatter_icon, compound = LEFT, command=plt_scatter_one_pos, bd = 0, bg = bg_color)
+button_line = tk.Button(window, image = line_icon, compound = LEFT, command=plot_line_chart, bd = 0, bg = bg_color)
+button_detail = tk.Button(window, image = detail_icon, compound = LEFT, command=plot_scatter_time, bd = 0, bg = bg_color)
+button_corr = tk.Button(window, image = corr_icon, compound = LEFT, command=plot_corr, bd = 0, bg = bg_color)
+button_box = tk.Button(window, image = box_icon, compound = LEFT, command=plot_boxplot, bd = 0, bg = bg_color)
+button_map = tk.Button(window, image = map_icon, compound = LEFT, command=animation_on_map, bd = 0, bg = bg_color)
 
-lbl_feature = tk.Label(window, text='Features',font=(bold_font, 10), width=10, height=2)
-lbl_pos = tk.Label(window, text='Positions',font=(bold_font, 10), width=10, height=2)
-lbl_t = tk.Label(window, text='Time interval', font=(bold_font, 10), width=12, height=2)
-lbl_tf = tk.Label(window, text='(YYYY MM DD)', font=(norm_font, 10), width=12, height=2)
-lbl_start = tk.Label(window, text='Start time',font=(norm_font, 10), width=10, height=2)
-lbl_end = tk.Label(window, text='End time',font=(norm_font, 10), width=10, height=2)
+check_p0 = tk.Checkbutton(window, text='Pos0',variable=pos0_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p1 = tk.Checkbutton(window, text='Pos1',variable=pos1_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p2 = tk.Checkbutton(window, text='Pos2',variable=pos2_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p3 = tk.Checkbutton(window, text='Pos3',variable=pos3_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p4 = tk.Checkbutton(window, text='Pos4',variable=pos4_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p5 = tk.Checkbutton(window, text='Pos5',variable=pos5_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p6 = tk.Checkbutton(window, text='Pos6',variable=pos6_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_p7 = tk.Checkbutton(window, text='Pos7',variable=pos7_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
 
-check_pm10 = tk.Checkbutton(window, text='Pm1.0',variable=pm10_on, onvalue=1, offvalue=0)
-check_pm25 = tk.Checkbutton(window, text='Pm2.5',variable=pm25_on, onvalue=1, offvalue=0)
-check_pm100 = tk.Checkbutton(window, text='Pm10.0',variable=pm100_on, onvalue=1, offvalue=0)
-check_temp = tk.Checkbutton(window, text='Temp',variable=temp_on, onvalue=1, offvalue=0)
-check_humid = tk.Checkbutton(window, text='Humid',variable=humid_on, onvalue=1, offvalue=0)
+lbl_title = tk.Label(window, image = logo_icon, bg = bg_color, fg = fg_color)
+lbl_feature = tk.Label(window, text='Select Features',font=(bold_font, 10), width=15, height=2, bd = 0, bg = bg_color, fg = fg_color)
+lbl_pos = tk.Label(window, text='Choose Positions',font=(bold_font, 10), width=15, height=2, bg = bg_color, fg = fg_color)
+lbl_t = tk.Label(window, text='Time interval', font=(bold_font, 10), width=12, height=2, bg = bg_color, fg = fg_color)
+lbl_tf = tk.Label(window, text='(YYYY MM DD)', font=(norm_font, 10), width=12, height=2, bg = bg_color, fg = fg_color)
+lbl_start = tk.Label(window, text='Start time',font=(norm_font, 10), width=10, height=2, bg = bg_color, fg = fg_color)
+lbl_end = tk.Label(window, text='End time',font=(norm_font, 10), width=10, height=2, bg = bg_color, fg = fg_color)
+
+check_pm10 = tk.Checkbutton(window, text='Pm1.0',variable=pm10_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_pm25 = tk.Checkbutton(window, text='Pm2.5',variable=pm25_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_pm100 = tk.Checkbutton(window, text='Pm10.0',variable=pm100_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_temp = tk.Checkbutton(window, text='Temp',variable=temp_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
+check_humid = tk.Checkbutton(window, text='Humid',variable=humid_on, onvalue=1, offvalue=0, bg = bg_color, fg = fg_color, selectcolor=checkbox_color, activeforeground=fg_color, activebackground=bg_color)
 
 entry_start = tk.Entry(window, show = None)
 entry_end = tk.Entry(window, show = None)
 
 # Place widgets on the window
-button_dl_data.grid(row=0, column=0, columnspan=3, padx=2, pady=2)
-button_scatter.grid(row=1, column=0, padx=2, pady=2)
-button_line.grid(row=1, column=1, padx=2, pady=2)
-button_map.grid(row=1, column=2, padx=2, pady=2)
-button_detail.grid(row=2, column=0, padx=2, pady=2)
-button_corr.grid(row=2, column=1, padx=2, pady=2)
-button_box.grid(row=2, column=2, padx=2, pady=2)
 
-lbl_pos.grid(row=3, column=0, padx=2, pady=2)
-check_p0.grid(row=4, column=0, padx=2, pady=2)
-check_p1.grid(row=4, column=1, padx=2, pady=2)
-check_p2.grid(row=4, column=2, padx=2, pady=2)
-check_p3.grid(row=5, column=0, padx=2, pady=2)
-check_p4.grid(row=5, column=1, padx=2, pady=2)
-check_p5.grid(row=5, column=2, padx=2, pady=2)
-check_p6.grid(row=6, column=0, padx=2, pady=2)
-check_p7.grid(row=6, column=1, padx=2, pady=2)
+lbl_title.grid(row=0, column=0, columnspan=3, padx=2, pady=2)
+lbl_pos.grid(row=1, column=0, columnspan=3, padx=2, pady=2)
+check_p0.grid(row=2, column=0, padx=2, pady=2)
+check_p1.grid(row=2, column=1, padx=2, pady=2)
+check_p2.grid(row=2, column=2, padx=2, pady=2)
+check_p3.grid(row=3, column=0, padx=2, pady=2)
+check_p4.grid(row=3, column=1, padx=2, pady=2)
+check_p5.grid(row=3, column=2, padx=2, pady=2)
+check_p6.grid(row=4, column=0, padx=2, pady=2)
+check_p7.grid(row=4, column=1, padx=2, pady=2)
 
-lbl_feature.grid(row=7, column=0, padx=2, pady=2)
-check_pm10.grid(row=8, column=0, padx=2, pady=2)
-check_pm25.grid(row=8, column=1, padx=2, pady=2)
-check_pm100.grid(row=8, column=2, padx=2, pady=2)
-check_temp.grid(row=9, column=0, padx=2, pady=2)
-check_humid.grid(row=9, column=1, padx=2, pady=2)
+lbl_feature.grid(row=5, column=0, columnspan=3, padx=2, pady=2)
+check_pm10.grid(row=6, column=0, padx=2, pady=2)
+check_pm25.grid(row=6, column=1, padx=2, pady=2)
+check_pm100.grid(row=6, column=2, padx=2, pady=2)
+check_temp.grid(row=7, column=0, padx=2, pady=2)
+check_humid.grid(row=7, column=1, padx=2, pady=2)
 
-lbl_t.grid(row=10, column=0, padx=2, pady=2)
-lbl_tf.grid(row=10, column=1, padx=2, pady=2)
-lbl_start.grid(row=11, column=0, padx=2, pady=2)
-entry_start.grid(row=11, column=1, padx=2, pady=2)
-lbl_end.grid(row=12, column=0, padx=2, pady=2)
-entry_end.grid(row=12, column=1, padx=2, pady=2)
+lbl_t.grid(row=8, column=0, padx=2, pady=10)
+lbl_tf.grid(row=8, column=1, padx=2, pady=2)
+lbl_start.grid(row=9, column=0, padx=2, pady=2)
+entry_start.grid(row=9, column=1, padx=2, pady=2)
+lbl_end.grid(row=10, column=0, padx=2, pady=2)
+entry_end.grid(row=10, column=1, padx=2, pady=2)
+
+button_scatter.grid(row=11, column=0, padx=2, pady=2)
+button_line.grid(row=11, column=1, padx=2, pady=2)
+button_map.grid(row=11, column=2, padx=2, pady=2)
+button_detail.grid(row=12, column=0, padx=2, pady=2)
+button_corr.grid(row=12, column=1, padx=2, pady=2)
+button_box.grid(row=12, column=2, padx=2, pady=2)
+button_dl_data.grid(row=13, column=0, columnspan=3, padx=2, pady=2)
 
 graph_frame.grid(row=0, column=3, rowspan=15, padx=5, pady=5)
 
