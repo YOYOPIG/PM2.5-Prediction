@@ -205,7 +205,18 @@ def save_plot(fig, name):
             ctr+=1
         filename += str(ctr)
     filename += '.png'
+    fig.savefig(filename)
+
+def save_gif(fig, name):
+    filename = './saved_plots/' + name
+    filename = filename.replace(" ", "_")
     print(filename)
+    ctr = 1
+    if os.path.exists(filename + '.gif'):
+        while os.path.exists(filename + str(ctr) + '.gif'):
+            ctr+=1
+        filename += str(ctr)
+    filename += '.gif'
     fig.savefig(filename)
 
 def calculate_time(start_time, hr_passed):
@@ -231,26 +242,24 @@ def calculate_time(start_time, hr_passed):
             break
     return [year, month, day, hr]
 
-timer_id = None
 
+# timer_id = None
+# def start_loading(n=0):
+#     global timer_id
+#     global window
+#     print('load')
+#     gif = giflist[n%len(giflist)]
+#     #gif = PhotoImage(file = "./resources/loading.gif")
+#     loading_canvas.create_image(1100,400,image=gif)
+#     timer_id = window.after(30, start_loading, n+1) # call this function every 100ms
 
-def start_loading(n=0):
-    global timer_id
-    global window
-    print('load')
-    gif = giflist[n%len(giflist)]
-    #gif = PhotoImage(file = "./resources/loading.gif")
-    loading_canvas.create_image(1100,400,image=gif)
-    timer_id = window.after(30, start_loading, n+1) # call this function every 100ms
-
-def stop_loading():
-    if timer_id:
-        window.after_cancel(timer_id)
-        loading_canvas.delete(ALL)
+# def stop_loading():
+#     if timer_id:
+#         window.after_cancel(timer_id)
+#         loading_canvas.delete(ALL)
 
 # no pos, ft one, time on
 def animation_on_map():
-    start_loading()
     tar_feature =  get_focus_features()
     in_time = get_input_time()
     img = plt.imread("ncku.jpg") # background img
@@ -293,6 +302,7 @@ def animation_on_map():
     # Plot the results
     fig,ax = plt.subplots( figsize=(fig_width, fig_height-2))
     ###########
+    # title = ''
     # def animate2(i):
     #     ax.clear()
     #     plt.imshow(img, extent=[0, 400, 0, 300])
@@ -300,14 +310,16 @@ def animation_on_map():
     #     time = calculate_time(in_time[0], i)
     #     CS = ax.contourf(ans[i], alpha=.6)
     #     #cb = fig.colorbar(CS)
-    #     ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(time[0]) + '/' + str(time[1]) + '/' + str(time[2]) + ' ' + str(time[3]) + ':00', fontsize=20)
+    #     title = 'Avg. ' + tar_feature[0] + ' at ' + str(time[0]) + '/' + str(time[1]) + '/' + str(time[2]) + ' ' + str(time[3]) + ':00'
+    #     ax.set_title(title, fontsize=20)
     # # canvas = FigureCanvasTkAgg(fig, graph_frame)
     # # canvas.get_tk_widget().pack()
     # interval = 0.5 #sec
-    # anim = animation.FuncAnimation(fig, animate2, data_num, interval=interval*1e+3,repeat_delay=1000)
-    #plt.show()
+    # anim = animation.FuncAnimation(fig, animate2, data_num-1, interval=interval*1e+3,repeat_delay=1000)
+    # anim.save('./saved_plots/anim.gif', writer='imagemagick', fps=30)
+    # # save_gif(fig, title)
+    # plt.show()
     ############
-    stop_loading()
     plt.imshow(img, extent=[0, 400, 0, 300])
     plt.axis('off')
     CS = ax.contourf(ans[0], alpha=.6)
@@ -649,8 +661,8 @@ background_image = PhotoImage(file = "./resources/bg.png")
 background_label = tk.Label(window, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-loading_canvas=Canvas(window, width=80, height=80, bd=0) 
-loading_canvas.place(x=1100, y=400)
+# loading_canvas=Canvas(window, width=80, height=80, bd=0) 
+# loading_canvas.place(x=1100, y=400)
 # create a list of image objects
 giflist = []
 for i in range(60):
