@@ -15,8 +15,9 @@ from scipy import stats
 import scipy.interpolate as interp
 import matplotlib.animation as animation 
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import os
 
-# Global constants
+# Global constants for plotting
 fig_width = 12
 fig_height = 10
 
@@ -194,6 +195,19 @@ def clear_plot():
     for widget in graph_frame.winfo_children():
         widget.destroy()
 
+def save_plot(fig, name):
+    filename = './saved_plots/' + name
+    filename = filename.replace(" ", "_")
+    print(filename)
+    ctr = 1
+    if os.path.exists(filename + '.png'):
+        while os.path.exists(filename + str(ctr) + '.png'):
+            ctr+=1
+        filename += str(ctr)
+    filename += '.png'
+    print(filename)
+    fig.savefig(filename)
+
 def calculate_time(start_time, hr_passed):
     year = start_time.year
     month = start_time.month
@@ -267,13 +281,13 @@ def animation_on_map():
     #     plt.axis('off')
     #     time = calculate_time(in_time[0], i)
     #     CS = ax.contourf(ans[i], alpha=.6)
-    #     cb = fig.colorbar(CS)
+    #     #cb = fig.colorbar(CS)
     #     ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(time[0]) + '/' + str(time[1]) + '/' + str(time[2]) + ' ' + str(time[3]) + ':00', fontsize=20)
     # # canvas = FigureCanvasTkAgg(fig, graph_frame)
     # # canvas.get_tk_widget().pack()
     # interval = 0.5 #sec
     # anim = animation.FuncAnimation(fig, animate2, data_num, interval=interval*1e+3,repeat_delay=1000)
-    # plt.show()
+    #plt.show()
     ############
     plt.imshow(img, extent=[0, 400, 0, 300])
     plt.axis('off')
@@ -283,7 +297,8 @@ def animation_on_map():
     month = in_time[0].month
     day = in_time[0].day
     hr = in_time[0].hour
-    ax.set_title('Avg. ' + tar_feature[0] + ' at ' + str(year) + '/' + str(month) + '/' + str(day) + ' ' + str(hr) + ':00', fontsize=20)
+    title = 'Avg. ' + tar_feature[0] + ' at ' + str(year) + '/' + str(month) + '/' + str(day) + ' ' + str(hr) + ':00'
+    ax.set_title(title, fontsize=20)
     clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
@@ -325,7 +340,8 @@ def plot_line_chart():
     for item in tar_feature:
         label_display.append(lbl_name[item])
     fig,ax = plt.subplots(figsize=(fig_width, fig_height))
-    ax.set_title('Line chart of ' + pos_name[tar_positions[0]], fontsize=20)
+    title = 'Line chart of ' + pos_name[tar_positions[0]]
+    ax.set_title(title, fontsize=20)
     for i in range(len(label)):
         ax.plot(df['date'], df[label[i]], c=colors[i], label=label_display[i], lw=1, ls='-')
         ax.legend()
@@ -339,6 +355,7 @@ def plot_line_chart():
     clear_plot()
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
+    save_plot(fig, title)
     # Uncomment this if u need to show figure in a separate window
     # plt.show()
 
@@ -372,11 +389,15 @@ def plot_scatter_time():
     pos_name = {0:'Social Science building',1:'Medical building',2:'Sheng-li dorm',3:'Activity Center',4:'Architecture building',
                 5:'Computer Science building',6:'Computer & Network center',7:'Instrument Dev. Center'}
     lbl_name = {'pm10' : 'Pm1.0', 'pm25' : 'Pm2.5', 'pm100' : 'Pm10.0', 'temp' : 'temperature', 'humidity' : 'humidity'}
-    ax.set_title('Time separated scatter plot of ' + lbl_name[tar_feature[0]] + ' at ' + pos_name[tar_positions[0]], fontsize=18)
+    title = 'Time separated scatter plot of ' + lbl_name[tar_feature[0]] + ' at ' + pos_name[tar_positions[0]]
+    ax.set_title(title, fontsize=18)
     for i, dff in df.groupby('color'):
       ax.scatter(dff['date'], dff[tar_feature[0]], c=colors[i], label=labels[i])
       ax.legend()
+    axes = plt.gca()
+    axes.set_xlim([in_time[0], in_time[1]])
     clear_plot()
+    save_plot(fig, title)
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
@@ -421,7 +442,8 @@ def plot_corr():
     corr = df.corr()
     # plot correlation matrix
     fig, ax = plt.subplots(figsize=(fig_width, fig_height))
-    ax.set_title('Correlation between different features', fontsize=20)
+    title = 'Correlation between different features'
+    ax.set_title(title, fontsize=20)
     sns.heatmap(corr, 
                 xticklabels=corr.columns.values,
                 yticklabels=corr.columns.values,
@@ -432,6 +454,7 @@ def plot_corr():
                 cmap='YlGnBu',
                 linewidths=0.5)
     clear_plot()
+    save_plot(fig, title)
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
@@ -483,6 +506,7 @@ def plt_scatter():
     plt.ylabel('pm2.5 (μg/m^3)')
     #plt.show()
     clear_plot()
+
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
@@ -513,7 +537,8 @@ def plot_boxplot():
     fig, axes = plt.subplots(3, 1, sharex=True, figsize=(fig_width, fig_height))
     # subplot 1
     ax = sns.boxplot(x='position', y='value', data=df_melt, hue='Particulate Matter (PM)', palette='Set3', ax=axes[0])
-    ax.set_title('Boxplot of all features', fontsize=20)
+    title = 'Boxplot of all features'
+    ax.set_title(title, fontsize=20)
     ax.axis(ymin=0, ymax=100)
     ax.set_xlabel('')
     ax.set_ylabel('(μg/m^3)')
@@ -530,6 +555,7 @@ def plot_boxplot():
     ax.set_ylabel('humidity(%)')
     ax.set_xticklabels(pos_lbl)
     clear_plot()
+    save_plot(fig, title)
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
@@ -584,6 +610,7 @@ def plt_scatter_one_pos():
                  pos_name[tar_positions[0]]), fontsize=18)
     #plt.show()
     clear_plot()
+    save_plot(fig, 'Scatter plot at ' + pos_name[tar_positions[0]])
     canvas = FigureCanvasTkAgg(fig, graph_frame)
     canvas.get_tk_widget().pack()
 
@@ -593,8 +620,10 @@ def plt_scatter_one_pos():
 # Create window
 window = tk.Tk()
 window.title('Air Monitor')
-#window.attributes('-fullscreen', True)
-window.geometry('1880x1000') # Set window size(L*W)
+window.geometry('1900x1000') # Set window size(L*W)
+#window.state("zoomed")
+window.resizable(0,0)
+#window.geometry('1880x1000') # Set window size(L*W)
 #window.configure(background='#42444d')
 
 background_image = PhotoImage(file = "./resources/bg.png")
@@ -648,7 +677,7 @@ corr_icon = pi_corr.subsample(sample_rate, sample_rate)
 box_icon = pi_box.subsample(sample_rate, sample_rate) 
 map_icon = pi_map.subsample(sample_rate, sample_rate) 
 line_icon = pi_line.subsample(sample_rate, sample_rate) 
-dl_icon = pi_dl.subsample(3, 3)
+dl_icon = pi_dl.subsample(6, 6)
 logo_icon = pi_logo.subsample(1, 1)
 
 # Declare widgets
@@ -713,15 +742,19 @@ entry_start.grid(row=9, column=1, padx=2, pady=2)
 lbl_end.grid(row=10, column=0, padx=2, pady=2)
 entry_end.grid(row=10, column=1, padx=2, pady=2)
 
-button_scatter.grid(row=11, column=0, padx=2, pady=2)
-button_line.grid(row=11, column=1, padx=2, pady=2)
-button_map.grid(row=11, column=2, padx=2, pady=2)
-button_detail.grid(row=12, column=0, padx=2, pady=2)
-button_corr.grid(row=12, column=1, padx=2, pady=2)
-button_box.grid(row=12, column=2, padx=2, pady=2)
-button_dl_data.grid(row=13, column=0, columnspan=3, padx=2, pady=2)
+window.grid_rowconfigure(11, minsize=30)
+button_scatter.grid(row=12, column=0, padx=2, pady=2)
+button_line.grid(row=12, column=1, padx=2, pady=2)
+button_map.grid(row=12, column=2, padx=2, pady=2)
+button_detail.grid(row=13, column=0, padx=2, pady=2)
+button_corr.grid(row=13, column=1, padx=2, pady=2)
+button_box.grid(row=13, column=2, padx=2, pady=2)
 
-graph_frame.grid(row=0, column=3, rowspan=15, padx=5, pady=5)
+window.grid_rowconfigure(14, minsize=10)
+button_dl_data.grid(row=15, column=0, columnspan=3, padx=2, pady=2)
+
+window.grid_columnconfigure(3, minsize=20)
+graph_frame.grid(row=0, column=4, rowspan=20, padx=1, pady=1)
 
 
 # At the end, start the window loop
