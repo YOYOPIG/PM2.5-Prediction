@@ -231,8 +231,26 @@ def calculate_time(start_time, hr_passed):
             break
     return [year, month, day, hr]
 
+timer_id = None
+
+
+def start_loading(n=0):
+    global timer_id
+    global window
+    print('load')
+    gif = giflist[n%len(giflist)]
+    #gif = PhotoImage(file = "./resources/loading.gif")
+    loading_canvas.create_image(1100,400,image=gif)
+    timer_id = window.after(30, start_loading, n+1) # call this function every 100ms
+
+def stop_loading():
+    if timer_id:
+        window.after_cancel(timer_id)
+        loading_canvas.delete(ALL)
+
 # no pos, ft one, time on
 def animation_on_map():
+    start_loading()
     tar_feature =  get_focus_features()
     in_time = get_input_time()
     img = plt.imread("ncku.jpg") # background img
@@ -289,6 +307,7 @@ def animation_on_map():
     # anim = animation.FuncAnimation(fig, animate2, data_num, interval=interval*1e+3,repeat_delay=1000)
     #plt.show()
     ############
+    stop_loading()
     plt.imshow(img, extent=[0, 400, 0, 300])
     plt.axis('off')
     CS = ax.contourf(ans[0], alpha=.6)
@@ -621,7 +640,7 @@ def plt_scatter_one_pos():
 window = tk.Tk()
 window.title('Air Monitor')
 window.geometry('1900x1000') # Set window size(L*W)
-#window.state("zoomed")
+window.state("zoomed")
 window.resizable(0,0)
 #window.geometry('1880x1000') # Set window size(L*W)
 #window.configure(background='#42444d')
@@ -629,6 +648,14 @@ window.resizable(0,0)
 background_image = PhotoImage(file = "./resources/bg.png")
 background_label = tk.Label(window, image=background_image)
 background_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+loading_canvas=Canvas(window, width=80, height=80, bd=0) 
+loading_canvas.place(x=1100, y=400)
+# create a list of image objects
+giflist = []
+for i in range(60):
+    photo = PhotoImage(file='./resources/loading/frame_'+str(i)+'_delay-0.03s.png')
+    giflist.append(photo.subsample(6, 6))
 
 graph_frame = tk.Frame(window)
 
